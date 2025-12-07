@@ -1,54 +1,60 @@
-name: CI
+name: Node test
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   pull_request:
-    branches: ["main"]
+    branches: [main]
 
 jobs:
-  build-and-test:
+  test:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
-
     services:
       mongo:
-        image: mongo:6.0
+        image: mongo:latest
         ports:
           - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin
         options: >-
-          --bind_ip_all
-          --replSet rs0
-          --health-cmd "mongo --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s
-          --health-timeout 5s
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'" 
+          --health-interval 10s 
+          --health-timeout 5s 
           --health-retries 5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
+      
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Set environment variables
+      - name: Install mongosh
         run: |
-          echo "PORT=3000" >> $GITHUB_ENV
-          echo "APP_ENV=DEV" >> $GITHUB_ENV
-          echo "MONGO_URI=mongodb://admin:admin@localhost:27017/test_template?authSource=admin" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y gnupg wget
+          wget -qO- https://www.mongodb.org/static/pgp/server-7.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-7.0.asc
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+          mongosh --version
 
-      - name: Initialize MongoDB (create admin user)
+      - name: Initialize MongoDB
         run: |
-          # Wait a few seconds for MongoDB to be ready
-          sleep 5
-          mongo <<EOF
-          use admin
-          db.createUser({user: "admin", pwd: "admin", roles: [{role: "root", db: "admin"}]})
+          mongosh --host localhost -u admin -p admin --authenticationDatabase admin <<EOF
+            db = db.getSiblingDB('APP-DB');
+            db.createUser({ user: 'APP-USERNAME', pwd: 'APP-PASSWORD', roles: [{ role: 'readWrite', db: 'APP-DB' }] });
+            db.createCollection('APP-COLLECTION');
           EOF
 
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
       - name: Run tests
         run: npm test
+        env:
+            PORT: 3000
+            APP_ENV: DEV
+            MONGO_URI: mongodb://admin:admin@localhost:27017/APP-DB
+        
