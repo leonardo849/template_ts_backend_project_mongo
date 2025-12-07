@@ -16,10 +16,9 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --auth
           --bind_ip_all
           --replSet rs0
-          --health-cmd "mongo --username admin --password admin --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"
+          --health-cmd "mongo --eval 'db.adminCommand(\"ping\")'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -28,22 +27,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: "20"
 
-      - name: insatll libs
+      - name: Install dependencies
         run: npm ci
 
-      - name: set enviroment variables
+      - name: Set environment variables
         run: |
           echo "PORT=3000" >> $GITHUB_ENV
           echo "APP_ENV=DEV" >> $GITHUB_ENV
           echo "MONGO_URI=mongodb://admin:admin@localhost:27017/test_template?authSource=admin" >> $GITHUB_ENV
 
-      - name: initalize mongo 
+      - name: Initialize MongoDB (create admin user)
         run: |
+          # Wait a few seconds for MongoDB to be ready
+          sleep 5
           mongo <<EOF
           use admin
           db.createUser({user: "admin", pwd: "admin", roles: [{role: "root", db: "admin"}]})
