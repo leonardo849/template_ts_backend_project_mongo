@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --auth
+          --bind_ip_all
+          --replSet rs0
+          --health-cmd "mongo --username admin --password admin --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: insatll libs
+        run: npm ci
+
+      - name: set enviroment variables
+        run: |
+          echo "PORT=3000" >> $GITHUB_ENV
+          echo "APP_ENV=DEV" >> $GITHUB_ENV
+          echo "MONGO_URI=mongodb://admin:admin@localhost:27017/test_template?authSource=admin" >> $GITHUB_ENV
+
+      - name: initalize mongo 
+        run: |
+          mongo <<EOF
+          use admin
+          db.createUser({user: "admin", pwd: "admin", roles: [{role: "root", db: "admin"}]})
+          EOF
+
+      - name: Run tests
+        run: npm test

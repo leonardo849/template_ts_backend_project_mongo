@@ -1,7 +1,7 @@
 import {connect} from "mongoose"
-import { Logger } from "../utils/logger.js"
+import { Logger } from "../utils/logger.ts"
 import { basename } from "path"
-import { IDatabase } from "../interfaces/database.interface.js"
+import { IDatabase } from "../interfaces/database.interface.ts"
 
 export class Database implements IDatabase {
     private file = basename(import.meta.url)

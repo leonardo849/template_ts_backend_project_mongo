@@ -13,17 +13,16 @@
   "license": "ISC",
   "author": "me :)",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "src/main.ts",
   "scripts": {
-    "build": "npx tsc",
-    "start": "npx tsc && node dist/index.js",
-    "watch": "npx tsc -w",
+    "start": "node --loader ts-node/esm src/main.ts",
     "lint": "npx eslint .",
     "lint:fix": "npx eslint . --fix",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js ----detectOpenHandles"
   },
   "dependencies": {
     "@typegoose/typegoose": "^12.20.0",
+    "@types/supertest": "^6.0.3",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "mongoose": "^8.19.4",
@@ -34,6 +33,7 @@
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
+    "@types/yargs-parser": "^21.0.3",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "eslint": "^9.39.1",

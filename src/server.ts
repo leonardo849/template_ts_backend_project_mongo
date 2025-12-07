@@ -1,22 +1,30 @@
-import { BaseServer } from "./classes/server.abstract.js";
-import express, {Express} from "express"
-import { Logger } from "./utils/logger.js";
+import { BaseServer } from "./classes/server.abstract.ts";
+import  { Request, Response} from "express"
+import { Logger } from "./utils/logger.ts";
 import { basename } from "path";
 
 export class Server extends BaseServer { 
-    constructor(port: number) {
-        super(port)
+    constructor() {
+        super()
+        this.setupApp()
     }
-    async start(): Promise<void> {
-        const server = this.app.listen(this.port, () => {
+    setupApp() {
+        this.app.get("/", function(req: Request, reply: Response) {
+            reply.status(200).json({message: "hello"})
+        })
+    }
+    start(port: number) {
+        
+        const server = this.app.listen(port, () => {
             Logger.info({file: basename(import.meta.url)}, "trying to run server") 
         })
-
         server.on("error", (err: Error) => {
             Logger.error(err, {file: basename(import.meta.url), err})
             process.exit(1)
         })
 
-        Logger.info({file: basename(import.meta.url)}, `server is running on port ${this.port}`)
+        
+
+        Logger.info({file: basename(import.meta.url)}, `server is running on port ${port}`)
     }
 }
