@@ -22,6 +22,5 @@ export class Database implements IDatabase {
             await mongoose.connection.close()
             Logger.info({file: this.file}, "disconnected to mongo")
         }
-        
     }
 }
